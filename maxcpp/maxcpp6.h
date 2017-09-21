@@ -168,8 +168,11 @@ THE SOFTWARE.
 						A_CANT,													\
 						0); 
 
-// used for registering methods for clocks and other delegate methods (i.e defer_low)
+// used for clocks, qelem, and other no parameter delegate methods
 #define TO_METHOD_NONE(CLASS, METHOD) ((method)CLASS::MaxMethodNone<&CLASS::METHOD>::call)
+
+// used for defer, defer_medium, defer_low, schedule, schedule_delay, etc.
+#define TO_METHOD_TASK(CLASS, METHOD) ((method)CLASS::MaxMethodTask<&CLASS::METHOD>::call)
 
 // used for attr accessors
 #define TO_METHOD_GET(CLASS, METHOD) ((method)CLASS::MaxMethodAccessorGet<&CLASS::METHOD>::call)
@@ -192,27 +195,26 @@ public:
 	static t_class * m_class;
 	
 	// template functors to forward Max messages to class methods:
-	
-	typedef void (T::*maxmethodgimme)(long inlet, t_symbol * s, long ac, t_atom * av);
+	typedef void (T::*maxmethodgimme)(const long inlet, const t_symbol * const s, const long ac, const t_atom * const av);
 	template<maxmethodgimme F>
 	struct MaxMethodGimme {
-		static void call(T * x, t_symbol * s, long ac, t_atom * av) { ((x)->*F)(proxy_getinlet((t_object *)x), s, ac, av); }
+		static void call(T * x, const t_symbol * const s, const long ac, const t_atom * const av) { ((x)->*F)(proxy_getinlet((t_object *)x), s, ac, av); }
 	};
 	
-	typedef t_max_err (T::*maxmethodgimmeback)(t_symbol *s, long ac, t_atom *av, t_atom *rv);
+	typedef t_max_err (T::*maxmethodgimmeback)(const t_symbol * const s, const long ac, const t_atom * const av, t_atom * const rv);
 	template<maxmethodgimmeback F>
 	struct MaxMethodGimmeback {
-		static t_max_err call(T * x, t_symbol * s, long ac, t_atom * av, t_atom *rv) { return ((x)->*F)(s, ac, av, rv); }
+		static t_max_err call(T * x, const t_symbol * const s, const long ac, const t_atom * const av, t_atom * const rv) { return ((x)->*F)(s, ac, av, rv); }
 	};
 	
-	typedef void (T::*maxmethod)(long inlet);
+	typedef void (T::*maxmethod)(const long inlet);
 	template<maxmethod F>
 	struct MaxMethod {
 		static void call(T * x) { ((x)->*F)(proxy_getinlet((t_object *)x)); }
 	};
 	
 	//A_CANT for dblclick
-	typedef void (T::*maxmethodcant)(long inlet);
+	typedef void (T::*maxmethodcant)(const long inlet);
 	template<maxmethodcant F>
 	struct MaxMethodCant {
 		static void call(T * x) { ((x)->*F)(proxy_getinlet((t_object *)x)); }
@@ -226,17 +228,17 @@ public:
 	};
 
 	//A_CANT for edclose and edsave
-	typedef void (T::*maxmethodedclose)(long inlet, char** text, long size);
+	typedef void (T::*maxmethodedclose)(const long inlet, char** const text, const long size);
 	template<maxmethodedclose F>
 	struct MaxMethodEdClose {
-		static void call(T * x, char** text, long size) { ((x)->*F)(proxy_getinlet((t_object *)x), text, size); }
+		static void call(T * x, char** const text, const long size) { ((x)->*F)(proxy_getinlet((t_object *)x), text, size); }
 	};
 		
 	//A_CANT for assist
-	typedef void (T::*maxmethodassist)(void *b, long msg, long a, char *dst);
+	typedef void (T::*maxmethodassist)(void *b, const long io, const long index, char * const dst);
 	template<maxmethodassist F>
 	struct MaxMethodAssist {
-		static void call(T * x, void *b, long msg, long a, char *dst) { ((x)->*F)(b, msg, a, dst); }
+		static void call(T * x, void *b, const long io, const long index, char * const dst) { ((x)->*F)(b, io, index, dst); }
 	};
 		
     //A_CANT for loadbang
@@ -254,30 +256,30 @@ public:
 	};
 		
 	//proxy_getinlet((t_object *)x), 
-	typedef void (T::*maxmethodlong)(long inlet, long v);
+	typedef void (T::*maxmethodlong)(const long inlet, const long v);
 	template<maxmethodlong F>
 	struct MaxMethodLong {
-		static void call(T * x, long v) { ((x)->*F)(proxy_getinlet((t_object *)x), v); }
+		static void call(T * x, const long v) { ((x)->*F)(proxy_getinlet((t_object *)x), v); }
 	};
 		
 	//Template que j'ai rajoute for pouvoir faire A_DEFSYM(t_symbol *s)
-	typedef void (T::*maxmethoddefsym)(long inlet, t_symbol *s);
+	typedef void (T::*maxmethoddefsym)(const long inlet, const t_symbol * const s);
 	template<maxmethoddefsym F>
 	struct MaxMethodDefSym {
-		static void call(T * x, t_symbol *s) { ((x)->*F)(proxy_getinlet((t_object *)x), s); }
+		static void call(T * x, const t_symbol * const s) { ((x)->*F)(proxy_getinlet((t_object *)x), s); }
 	};	
 	
-	typedef void (T::*maxmethodfloat)(long inlet, double v);
+	typedef void (T::*maxmethodfloat)(const long inlet, const double v);
 	template<maxmethodfloat F>
 	struct MaxMethodFloat {
-		static void call(T * x, double v) { ((x)->*F)(proxy_getinlet((t_object *)x), v); }
+		static void call(T * x, const double v) { ((x)->*F)(proxy_getinlet((t_object *)x), v); }
 	};
 	
 	//A_CANT for notify
-	typedef t_max_err (T::*maxmethodnotify)(t_symbol *s, t_symbol *msg, void *sender, void *data);
+	typedef t_max_err (T::*maxmethodnotify)(const t_symbol * const s, const t_symbol *msg, void * const sender, void * const data);
 	template<maxmethodnotify F>
 	struct MaxMethodNotify{
-		static t_max_err call(T * x, t_symbol *s, t_symbol *msg, void *sender, void *data) {return ((x)->*F)(s, msg, sender, data); }
+		static t_max_err call(T * x, const t_symbol * const s, const t_symbol *msg, void * const sender, void * const data) {return ((x)->*F)(s, msg, sender, data); }
 	};
 	
 	//JBOX methods
@@ -301,23 +303,29 @@ public:
 	struct MaxMethodNone {
 		static void call(T * x) { ((x)->*F)(); }
 	};
+	// (method) task
+	typedef void (T::*maxmethodtask)(const t_symbol * const s, const long ac, const t_atom * const av);
+	template<maxmethodtask F>
+	struct MaxMethodTask {
+		static void call(T * x, const t_symbol * const s, const long ac, const t_atom * const av) { ((x)->*F)(s, ac, av); }
+	};
 	// (method) attr get accessor
-	typedef t_max_err (T::*maxmethodaccessorget)(long *ac, t_atom **av);
+	typedef t_max_err (T::*maxmethodaccessorget)(long * const ac, t_atom ** const av);
 	template<maxmethodaccessorget F>
 	struct MaxMethodAccessorGet {
-		static t_max_err call(T * x, void *attr, long *ac, t_atom **av) { return ((x)->*F)(ac, av); }
+		static t_max_err call(T * x, void *attr, long * const ac, t_atom ** const av) { return ((x)->*F)(ac, av); }
 	};
 	// (method) attr set accessor
-	typedef t_max_err (T::*maxmethodaccessorset)(long ac, t_atom *av);
+	typedef t_max_err (T::*maxmethodaccessorset)(const long ac, const t_atom * const av);
 	template<maxmethodaccessorset F>
 	struct MaxMethodAccessorSet {
-		static t_max_err call(T * x, void *attr, long ac, t_atom *av) { return ((x)->*F)(ac, av); }
+		static t_max_err call(T * x, void *attr, const long ac, const t_atom * const av) { return ((x)->*F)(ac, av); }
 	};
 
 };
 
 // note: only include this file once to prevent linker errors!
-template<typename T> t_class * MaxCppBase<T>::m_class = 0;
+template<typename T> t_class * MaxCppBase<T>::m_class = nullptr;
 
 // inherit from this one for non-audio objects
 template <typename T>
@@ -328,27 +336,26 @@ public:
 	void **	m_inletproxies;
 	long m_whichinlet;
 	
-	static t_class * makeMaxClass(const char * classname) {
+	static t_class * makeMaxClass(const char * const classname) {
 		common_symbols_init();
-		t_class * c = class_new(classname, (method)MaxCpp6<T>::maxcpp_create, (method)MaxCpp6<T>::maxcpp_destroy, sizeof(T), 0, A_GIMME, 0);
+		t_class * const c = class_new(classname, (method)MaxCpp6<T>::maxcpp_create, (method)MaxCpp6<T>::maxcpp_destroy, sizeof(T), 0, A_GIMME, 0);
 		class_register(CLASS_BOX, c);
 		MaxCppBase<T>::m_class = c;
 		return c;
 	}
 	
-	static void * maxcpp_create(t_symbol * sym, long ac, t_atom * av) {
+	static void * maxcpp_create(const t_symbol * const sym, const long ac, const t_atom * const av) {
 		void * x = object_alloc(MaxCppBase<T>::m_class);
 		new(x) T(sym, ac, av);
 		return (T *)x; 
 	}
 	
-	static void maxcpp_destroy(t_object * x) {
+	static void maxcpp_destroy(t_object * const x) {
 		T * t = (T *)x;
 		t->~T();
 		
 		// @see https://github.com/grrrwaaa/maxcpp/issues/2
-		unsigned long numinletproxies;
-		numinletproxies = sysmem_ptrsize(t->m_inletproxies)/sizeof(void*);
+		const unsigned long numinletproxies = sysmem_ptrsize(t->m_inletproxies)/sizeof(void*);
 
 		for (unsigned int i=0; i < numinletproxies; i++)
 		   object_free(t->m_inletproxies[i]);
@@ -357,9 +364,9 @@ public:
 		sysmem_freeptr(t->m_outlets);
 	}
 	
-	void setupIO(unsigned int numinlets = 1, unsigned int numoutlets = 1) {
+	void setupIO(const unsigned int numinlets = 1, const unsigned int numoutlets = 1) {
 		if (numinlets > 0) {
-			unsigned int numproxies = numinlets - 1;
+			const unsigned int numproxies = numinlets - 1;
 			m_inletproxies = (void **)sysmem_newptr(sizeof(void *) * numproxies);
 			for (unsigned int i=numproxies; 0<i; i--)
 				m_inletproxies[i - 1] = proxy_new(this, i, &this->m_whichinlet); // generic inlet

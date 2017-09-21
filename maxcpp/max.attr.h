@@ -20,16 +20,16 @@
 							or NULL to use the default setter.
 */
 #define ATTR_ACCESSORS(objclass,attrname,getter,setter) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
 		object_method(theattr,gensym("setmethod"),USESYM(get),TO_METHOD_GET(objclass,getter)); \
 		object_method(theattr,gensym("setmethod"),USESYM(set),TO_METHOD_SET(objclass,setter)); }
 
 #define ATTR_GET_ACCESSOR(objclass,attrname,getter) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
 		object_method(theattr,gensym("setmethod"),USESYM(get),TO_METHOD_GET(objclass,getter)); }
 
 #define ATTR_SET_ACCESSOR(objclass,attrname,setter) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
 		object_method(theattr,gensym("setmethod"),USESYM(set),TO_METHOD_SET(objclass,setter)); }
 		
 /**
@@ -389,8 +389,8 @@
 	@param	flags			Any flags you wish to add to this attribute, as defined in #e_max_attrflags.
 */
 #define ATTR_ADD_FLAGS(objclass,attrname,flags) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		long oldflags = object_method(theattr,gensym("getflags")); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+		const long oldflags = object_method(theattr,gensym("getflags")); \
 		object_method(theattr,gensym("setflags"),oldflags|flags); }
 
 
@@ -403,8 +403,8 @@
 	@param	flags			Any flags you wish to remove from this attribute, as defined in #e_max_attrflags.
 */
 #define ATTR_REMOVE_FLAGS(objclass,attrname,flags) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		long oldflags = object_method(theattr,gensym("getflags")); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+		const long oldflags = object_method(theattr,gensym("getflags")); \
 		object_method(theattr,gensym("setflags"),oldflags&(~flags)); }
 
 
@@ -421,7 +421,7 @@
 	@see	CLASS_ATTR_MIN
 */
 #define ATTR_FILTER_MIN(objclass,attrname,minval) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
 		attr_addfilter_clip(theattr,minval,0,1,0); }
 
 
@@ -438,7 +438,7 @@
 	@see	CLASS_ATTR_MAX
 */
 #define ATTR_FILTER_MAX(objclass,attrname,maxval) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
 		attr_addfilter_clip(theattr,0,maxval,0,1); }
 
 
@@ -454,7 +454,7 @@
 	@see 
 */
 #define ATTR_FILTER_CLIP(objclass,attrname,minval,maxval) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
 		attr_addfilter_clip(theattr,minval,maxval,1,1); }
 
 
@@ -467,9 +467,8 @@
 	@param	aliasname		The name of the new alias attribute.
 */
 #define ATTR_ALIAS(objclass,attrname,aliasname) \
-	{	t_object *thealias; \
-		t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		thealias = object_clone(theattr); \
+	{	t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+		t_object * const thealias = object_clone(theattr); \
 		object_method(thealias,USESYM(setname),gensym(aliasname)); \
 		class_addattr(objclass::m_class,thealias); \
 		CLASS_ATTR_ATTR_PARSE(objclass::m_class,aliasname,"alias",USESYM(symbol),0,attrname); }
@@ -485,7 +484,7 @@
 	@param	parsestr		A C-string, which will be parsed into an array of atoms to set the initial value.
 */
 #define ATTR_DEFAULT(objclass,attrname,parsestr) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"default",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); }
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"default",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); }
 
 
 /**
@@ -526,7 +525,7 @@
 	@param	parsestr		A C-string, which will be parsed into an array of atoms to set the initial value.
 */
 #define ATTR_DEFAULTNAME(objclass,attrname,parsestr) \
-	{ t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"defaultname",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); }
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"defaultname",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); }
 
 
 /**
@@ -556,7 +555,7 @@
 	@see	CLASS_ATTR_FILTER_CLIP
 */
 #define ATTR_MIN(objclass,attrname,parsestr) \
-  { t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"min",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); } 
+  { t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"min",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); } 
 
 
 /**
@@ -572,7 +571,7 @@
 	@see	CLASS_ATTR_FILTER_CLIP
 */
 #define ATTR_MAX(objclass,attrname,parsestr) \
-  { t_object *theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"max",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); } 
+  { t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"max",(t_symbol *)object_method(theattr,USESYM(gettype)),/*flags*/0,parsestr); } 
 
 
 // useful attr attr macros for UI objects
