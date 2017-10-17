@@ -31,7 +31,10 @@
 #define ATTR_SET_ACCESSOR(objclass,attrname,setter) \
 	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
 		object_method(theattr,gensym("setmethod"),USESYM(set),TO_METHOD_SET(objclass,setter)); }
-		
+
+#define ATTR_SET_BASE_ACCESSOR(objclass,attrname,baseclass,setter) \
+	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
+		object_method(theattr,gensym("setmethod"),USESYM(set),TO_METHOD_SET(baseclass,setter)); }
 /**
 	Create a char attribute and add it to a Max class.
 

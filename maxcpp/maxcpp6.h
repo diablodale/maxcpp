@@ -176,7 +176,7 @@ THE SOFTWARE.
 
 // used for attr accessors
 #define TO_METHOD_GET(CLASS, METHOD) ((method)CLASS::MaxMethodAccessorGet<&CLASS::METHOD>::call)
-#define TO_METHOD_SET(CLASS, METHOD) ((method)CLASS::MaxMethodAccessorSet<&CLASS::METHOD>::call)
+#define TO_METHOD_SET(CLASS, METHOD) ((method)MaxCppBase<CLASS>::MaxMethodAccessorSet<&CLASS::METHOD>::call)
 	
 // for DSP
 #define REGISTER_PERFORM(CLASS, METHOD) object_method( \
