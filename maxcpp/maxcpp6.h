@@ -182,10 +182,10 @@ THE SOFTWARE.
 #define REGISTER_PERFORM(CLASS, METHOD) object_method( \
 	dsp64, \
 	gensym("dsp_add64"), \
-	(t_object *)this, \
+	(t_pxobject *)this, \
 	MaxMethodPerform64<&CLASS::METHOD>::call,\
 	0, \
-	NULL);
+	nullptr);
 
 // a purely static base class for Max and MSP objects:
 template <typename T>
@@ -345,21 +345,20 @@ public:
 	}
 	
 	static void * maxcpp_create(const t_symbol * const sym, const long ac, const t_atom * const av) {
-		void * x = object_alloc(MaxCppBase<T>::m_class);
+		void * const x = object_alloc(MaxCppBase<T>::m_class);
 		new(x) T(sym, ac, av);
 		return (T *)x; 
 	}
 	
 	static void maxcpp_destroy(t_object * const x) {
-		T * t = (T *)x;
+		T * const t = (T *)x;
 		t->~T();
-		
-		// @see https://github.com/grrrwaaa/maxcpp/issues/2
+
+		// release manually allocated memory and inlet proxies
 		const unsigned long numinletproxies = sysmem_ptrsize(t->m_inletproxies)/sizeof(void*);
-
-		for (unsigned int i=0; i < numinletproxies; i++)
+		for (unsigned int i=0; i < numinletproxies; ++i) {
 		   object_free(t->m_inletproxies[i]);
-
+		}
 		sysmem_freeptr(t->m_inletproxies);
 		sysmem_freeptr(t->m_outlets);
 	}
@@ -368,11 +367,11 @@ public:
 		if (numinlets > 0) {
 			const unsigned int numproxies = numinlets - 1;
 			m_inletproxies = (void **)sysmem_newptr(sizeof(void *) * numproxies);
-			for (unsigned int i=numproxies; 0<i; i--)
+			for (unsigned int i=numproxies; 0 < i; i--)
 				m_inletproxies[i - 1] = proxy_new(this, i, &this->m_whichinlet); // generic inlet
 		}
 		m_outlets = (void **)sysmem_newptr(sizeof(void *) * numoutlets);
-		for (unsigned int i=0; i<numoutlets; i++)
+		for (unsigned int i=0; i<numoutlets; ++i)
 			m_outlets[numoutlets - i - 1] = outlet_new(this, NULL); // generic outlet
 	}
 	
@@ -385,18 +384,21 @@ template <typename T>
 class MspCpp6 : public MaxCppBase<T> {
 public:
 	t_pxobject m_ob;
+	void **	m_outlets;
+	void **	m_inletproxies;
+	long m_whichinlet;
 	
-	typedef void (T::*maxmethod_perform64)(double **ins, long numins, double **outs, long numouts, long sampleframes);
+	typedef void (T::*maxmethod_perform64)(double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes);
 	template<maxmethod_perform64 F>
 	struct MaxMethodPerform64 {
-		static void call(T *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam) { 
-			((x)->*F)(ins, numins, outs, numouts, sampleframes); 
+		static void call(T * const x, t_object * const dsp64, double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes, const long flags, void * const userparam) { 
+			((x)->*F)(ins, numins, outs, numouts, sampleframes);
 		}
 	};
 
-	static t_class * makeMaxClass(const char * classname) {
+	static t_class * makeMaxClass(const char * const classname) {
 		common_symbols_init();
-		t_class * c = class_new(classname, (method)MspCpp6<T>::maxcpp_create, (method)MspCpp6<T>::maxcpp_destroy, sizeof(T), NULL, A_GIMME, 0);
+		t_class * const c = class_new(classname, (method)MspCpp6<T>::maxcpp_create, (method)MspCpp6<T>::maxcpp_destroy, sizeof(T), NULL, A_GIMME, 0);
 		class_dspinit(c);
 		
 		class_addmethod(c, (method)MspCpp6<T>::maxcpp_dsp64, "dsp64", A_CANT, 0);
@@ -406,42 +408,73 @@ public:
 		return c;
 	}
 	
-	static void * maxcpp_create(t_symbol * sym, long ac, t_atom * av) {
-		void * x = object_alloc(MaxCppBase<T>::m_class);
+	static void * maxcpp_create(const t_symbol * const sym, const long ac, const t_atom * const av) {
+		void * const x = object_alloc(MaxCppBase<T>::m_class);
 		new(x) T(sym, ac, av);
 		return (T *)x; 
 	}
 	
-	void setupIO(unsigned int signal_inlets, unsigned int signal_outlets) {
-		dsp_setup((t_pxobject *)this, signal_inlets);
+	void setupIO(const unsigned int signal_inlets, const unsigned int signal_outlets, const unsigned int non_signal_inlets = 0, const unsigned int non_signal_outlets = 0) {
 		// prevent recycling of inputs for outputs
 		m_ob.z_misc = Z_NO_INPLACE;
-		for (unsigned int i=0; i < signal_outlets; i++) {
-			outlet_new((t_object *)this, "signal");
+
+		// create non-signal inlets
+		if (non_signal_inlets > 0) {
+			const int numproxies = non_signal_inlets - (signal_inlets ? 0 : 1);
+			m_inletproxies = (void **)sysmem_newptr(sizeof(void *) * numproxies);
+			unsigned int end_inlet_index = signal_inlets + non_signal_inlets - 1;
+			for (int i = 0; i < numproxies; ++i) {
+				m_inletproxies[numproxies - i - 1] = proxy_new(this, end_inlet_index - i, &this->m_whichinlet); // generic inlet
+			}
+		}
+
+		// create signal inlets
+		dsp_setup((t_pxobject *)this, signal_inlets);
+
+		// create non-signal outlets
+		unsigned int idx_outlet = signal_outlets + non_signal_outlets;
+		if (idx_outlet) {
+			m_outlets = (void **)sysmem_newptr(sizeof(void *) * idx_outlet);
+			--idx_outlet;	// offset to 0-base
+			for (unsigned int i = 0; i < non_signal_outlets; ++i) {
+				m_outlets[idx_outlet - i] = outlet_new(this, NULL); // generic outlet
+			}
+
+			// create signal outlets
+			idx_outlet = signal_outlets - 1;
+			for (unsigned int i = 0; i < signal_outlets; ++i) {
+				m_outlets[idx_outlet - i] = outlet_new((t_object *)this, "signal");
+			}
 		}
 	}
 	
-	static void maxcpp_destroy(t_object * x) {
-		dsp_free((t_pxobject *)x);
-		((T *)x)->~T();
+	static void maxcpp_destroy(t_pxobject * const x) {
+		dsp_free(x);
+		T * const t = (T *)x;
+		t->~T();
+
+		// release manually allocated memory and inlet proxies
+		const unsigned long numinletproxies = sysmem_ptrsize(t->m_inletproxies)/sizeof(void*);
+		for (unsigned int i=0; i < numinletproxies; ++i) {
+		   object_free(t->m_inletproxies[i]);
+		}
+		sysmem_freeptr(t->m_inletproxies);
+		sysmem_freeptr(t->m_outlets);
 	}
 	
-	static void maxcpp_dsp64(t_object *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags) {
+	static void maxcpp_dsp64(t_pxobject * const x, t_object * const dsp64, const short * const count, const double samplerate, const long maxvectorsize, const long flags) {
 		((T *)x)->dsp(dsp64, count, samplerate, maxvectorsize, flags);
 	}
 	
-	static void maxcpp_perform64(t_object *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam) {
-        ((T *)x)->perform(ins, numins, outs, numouts, sampleframes);
-    }
-	
 	// stub functions in case the user doesn't supply them:
-	void dsp(t_object * dsp64, short *count, double samplerate, long maxvectorsize, long flags) {
+	void dsp(t_object * const dsp64, const short * const count, const double samplerate, const long maxvectorsize, const long flags) {
 		REGISTER_PERFORM(T, perform);
 	}
-	void perform(double **ins, long numins, double **outs, long numouts, long sampleframes) {}
+	void perform(double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes) {}
 	
-	// C++ operator overload to treat MaxCpp6 objects as t_objects
-	operator t_object & () { return m_ob; }
+	// C++ operator overload to treat MaxMsp6 objects as t_objects
+	operator t_object & () { return m_ob.z_ob; }
+	operator t_pxobject & () { return m_ob; }
 };
 
 // inherit from this one for jbox objects
@@ -496,14 +529,15 @@ public:
 	}
 	
 	static void maxcpp_destroy(t_jbox * x){
-		jbox_free(&((T *)x)->m_ob);	
-		T *t = (T *)x;
+		jbox_free(&t->m_ob);
+		T * const t = (T *)x;
 		t->~T();
-		// @see https://github.com/grrrwaaa/maxcpp/issues/2
 
-		for (unsigned int i=0; i < t->m_inlet_count-1; i++)
+		// release manually allocated memory and inlet proxies
+		const unsigned long numinletproxies = sysmem_ptrsize(t->m_inletproxies)/sizeof(void*);
+		for (unsigned int i=0; i < numinletproxies; ++i) {
 		   object_free(t->m_inletproxies[i]);
-
+		}
 		sysmem_freeptr(t->m_inletproxies);
 		sysmem_freeptr(t->m_outlets);
 	}
@@ -515,7 +549,7 @@ public:
 	}
 	
 	void setupIO(unsigned int numinlets = 1, unsigned int numoutlets = 1) {
-		m_inlet_count = numinlets ;
+		m_inlet_count = numinlets;
 		m_outlet_count = numoutlets;
 	}
 	
@@ -523,11 +557,11 @@ public:
 		if (m_inlet_count > 0) {
 			unsigned int numproxies = m_inlet_count - 1;
 			m_inletproxies = (void **)sysmem_newptr(sizeof(void *) * numproxies);
-			for (unsigned int i=0; i<numproxies; i++)
+			for (unsigned int i=0; i<numproxies; ++i)
 				m_inletproxies[i] = proxy_new(this, i+1, &this->m_whichinlet); // generic inlet
 		}
 		m_outlets = (void **)sysmem_newptr(sizeof(void *) * m_outlet_count);
-		for (unsigned int i=0; i<m_outlet_count; i++)
+		for (unsigned int i=0; i<m_outlet_count; ++i)
 			m_outlets[m_outlet_count - i - 1] = outlet_new(this, NULL); // generic outlet	
 	}
 
@@ -557,7 +591,7 @@ public:
 
 	// C++ operator overload to treat JboxCpp6 objects as t_jbox and t_object
 	operator t_jbox & () { return m_ob; }
-	operator t_object & () { return m_ob; }
+	operator t_object & () { return m_ob.b_ob; }
 };
 
 #endif
