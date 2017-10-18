@@ -21,20 +21,20 @@
 */
 #define ATTR_ACCESSORS(objclass,attrname,getter,setter) \
 	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		object_method(theattr,gensym("setmethod"),USESYM(get),TO_METHOD_GET(objclass,getter)); \
-		object_method(theattr,gensym("setmethod"),USESYM(set),TO_METHOD_SET(objclass,setter)); }
+		object_method(theattr,USESYM(setmethod),USESYM(get),TO_METHOD_GET(objclass,getter)); \
+		object_method(theattr,USESYM(setmethod),USESYM(set),TO_METHOD_SET(objclass,setter)); }
 
 #define ATTR_GET_ACCESSOR(objclass,attrname,getter) \
 	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		object_method(theattr,gensym("setmethod"),USESYM(get),TO_METHOD_GET(objclass,getter)); }
+		object_method(theattr,USESYM(setmethod),USESYM(get),TO_METHOD_GET(objclass,getter)); }
 
 #define ATTR_SET_ACCESSOR(objclass,attrname,setter) \
 	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		object_method(theattr,gensym("setmethod"),USESYM(set),TO_METHOD_SET(objclass,setter)); }
+		object_method(theattr,USESYM(setmethod),USESYM(set),TO_METHOD_SET(objclass,setter)); }
 
 #define ATTR_SET_BASE_ACCESSOR(objclass,attrname,baseclass,setter) \
 	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		object_method(theattr,gensym("setmethod"),USESYM(set),TO_METHOD_SET(baseclass,setter)); }
+		object_method(theattr,USESYM(setmethod),USESYM(set),TO_METHOD_SET(baseclass,setter)); }
 /**
 	Create a char attribute and add it to a Max class.
 
@@ -393,8 +393,8 @@
 */
 #define ATTR_ADD_FLAGS(objclass,attrname,flags) \
 	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		const long oldflags = object_method(theattr,gensym("getflags")); \
-		object_method(theattr,gensym("setflags"),oldflags|flags); }
+		const long oldflags = object_method(theattr,USESYM(getflags)); \
+		object_method(theattr,USESYM(setflags),oldflags|flags); }
 
 
 /**
@@ -407,8 +407,8 @@
 */
 #define ATTR_REMOVE_FLAGS(objclass,attrname,flags) \
 	{ t_object * const theattr=(t_object *)class_attr_get(objclass::m_class,gensym(attrname)); \
-		const long oldflags = object_method(theattr,gensym("getflags")); \
-		object_method(theattr,gensym("setflags"),oldflags&(~flags)); }
+		const long oldflags = object_method(theattr,USESYM(getflags)); \
+		object_method(theattr,USESYM(setflags),oldflags&(~flags)); }
 
 
 /**
@@ -843,13 +843,13 @@ CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"basic",USESYM(long),/*flags*/0
 	@remark An example which makes a method invisible to users:
 	@code
 	class_addmethod(objclass::m_class, (method)my_foo, "foo", 0);
-	CLASS_METHOD_ATTR_PARSE(objclass::m_class, "foo", "undocumented", gensym("long"), 0, "1");
+	CLASS_METHOD_ATTR_PARSE(objclass::m_class, "foo", "undocumented", USESYM(long), 0, "1");
 	@endcode
 */
 #define METHOD_ATTR_PARSE(objclass,methodname,attrname,type,parsestring) \
 	{	t_hashtab *methods=NULL; \
 		t_object *m=NULL; \
-		methods = (t_hashtab *)class_extra_lookup(objclass::m_class,gensym("methods")); \
+		methods = (t_hashtab *)class_extra_lookup(objclass::m_class,USESYM(methods)); \
 		if (methods) { \
 			hashtab_lookup(methods,gensym((methodname)),&m); \
 			if (m) \
@@ -890,7 +890,7 @@ CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"basic",USESYM(long),/*flags*/0
 	@see		CLASS_STICKY_ATTR_CLEAR
 */
 #define STICKY_ATTR(objclass,name,parsestr) \
-	{ t_object *attr = attribute_new_parse(name,NULL,/*flags*/0,parsestr); class_sticky(objclass::m_class,gensym("sticky_attr"),gensym(name),attr); }
+	{ t_object *attr = attribute_new_parse(name,NULL,/*flags*/0,parsestr); class_sticky(objclass::m_class,USESYM(sticky_attr),gensym(name),attr); }
 
 
 /**
@@ -901,12 +901,12 @@ CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"basic",USESYM(long),/*flags*/0
 	@param		name			The name of the sticky attribute as a C-string.
 	@see		CLASS_STICKY_ATTR
 */
-#define STICKY_ATTR_CLEAR(objclass,name) class_sticky_clear(objclass::m_class,gensym("sticky_attr"),name?gensym(name):NULL)
+#define STICKY_ATTR_CLEAR(objclass,name) class_sticky_clear(objclass::m_class,USESYM(sticky_attr),name?gensym(name):NULL)
 
 #define STICKY_CATEGORY(objclass,name) \
-{ t_object *attr = attribute_new_format("category",NULL,/*flags*/0,"s",gensym_tr(name)); class_sticky(objclass::m_class,gensym("sticky_attr"),gensym("category"),attr); }
+{ t_object *attr = attribute_new_format("category",NULL,/*flags*/0,"s",gensym_tr(name)); class_sticky(objclass::m_class,USESYM(sticky_attr),USESYM(category),attr); }
 
-#define STICKY_CATEGORY_CLEAR(objclass) class_sticky_clear(objclass::m_class,gensym("sticky_attr"),gensym("category"))
+#define STICKY_CATEGORY_CLEAR(objclass) class_sticky_clear(objclass::m_class,USESYM(sticky_attr),USESYM(category))
 
 /**
 	Create an attribute, and add it to all following method declarations.
@@ -933,7 +933,7 @@ CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"basic",USESYM(long),/*flags*/0
 	@see		CLASS_STICKY_METHOD_CLEAR
 */
 #define STICKY_METHOD(objclass,name,parsestr) \
-	{ t_object *attr = attribute_new_parse(name,NULL,/*flags*/0,parsestr); class_sticky(objclass::m_class,gensym("sticky_method"),gensym(name),attr); }
+	{ t_object *attr = attribute_new_parse(name,NULL,/*flags*/0,parsestr); class_sticky(objclass::m_class,USESYM(sticky_method),gensym(name),attr); }
 
 
 /**
@@ -944,7 +944,7 @@ CLASS_ATTR_ATTR_PARSE(objclass::m_class,attrname,"basic",USESYM(long),/*flags*/0
 	@param		name			The name of the sticky attribute as a C-string.
 	@see		CLASS_STICKY_METHOD
 */
-#define STICKY_METHOD_CLEAR(objclass,name) class_sticky_clear(objclass::m_class,gensym("sticky_method"),name?gensym(name):NULL)
+#define STICKY_METHOD_CLEAR(objclass,name) class_sticky_clear(objclass::m_class,USESYM(sticky_method),name?gensym(name):NULL)
 
 
 #endif // MAXMSP_CPP_6_ATTR_H
