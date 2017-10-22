@@ -178,14 +178,22 @@ THE SOFTWARE.
 #define TO_METHOD_GET(CLASS, METHOD) ((method)CLASS::MaxMethodAccessorGet<&CLASS::METHOD>::call)
 #define TO_METHOD_SET(CLASS, METHOD) ((method)MaxCppBase<CLASS>::MaxMethodAccessorSet<&CLASS::METHOD>::call)
 	
-// for DSP
+// for DSP perform function
 #define REGISTER_PERFORM(CLASS, METHOD) object_method( \
-	dsp64, \
-	gensym("dsp_add64"), \
-	(t_pxobject *)this, \
-	MaxMethodPerform64<&CLASS::METHOD>::call,\
-	0, \
-	nullptr);
+						dsp64, \
+						gensym("dsp_add64"), \
+						(t_pxobject *)this, \
+						MaxMethodPerform64<&CLASS::METHOD>::call,\
+						0, \
+						nullptr);
+
+// for DSP state notify
+#define REGISTER_METHOD_DSPSTATE(CLASS, METHOD) class_addmethod(				\
+						(t_class *)CLASS::m_class,								\
+						(method)CLASS::MaxMethodDspState<&CLASS::METHOD>::call,	\
+						"dspstate",												\
+						A_CANT,													\
+						0);
 
 // a purely static base class for Max and MSP objects:
 template <typename T>
@@ -394,6 +402,13 @@ public:
 		static void call(T * const x, t_object * const dsp64, double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes, const long flags, void * const userparam) { 
 			((x)->*F)(ins, numins, outs, numouts, sampleframes);
 		}
+	};
+
+	//A_CANT for DSP state
+	typedef void (T::*maxmethoddspstate)(const long dspstate);
+	template<maxmethoddspstate F>
+	struct MaxMethodDspState {
+		static void call(T * const x, const long dspstate) { ((x)->*F)(dspstate); }
 	};
 
 	static t_class * makeMaxClass(const char * const classname) {
