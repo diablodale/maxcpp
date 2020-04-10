@@ -14,3 +14,7 @@
 sysbuild/
 *.sln
 *.suo
+
+# IDE local files
+.vs/
+.vscode/
