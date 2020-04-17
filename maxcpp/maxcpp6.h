@@ -4,9 +4,9 @@ Write MaxMSP (v5) objects in C++
 
 -- general --
 
-Allows the definition of a max object as a C++ class. 
+Allows the definition of a max object as a C++ class.
 
-Most of the mechanics of typical max objects are encapsulated by the curiously recurring template pattern. 
+Most of the mechanics of typical max objects are encapsulated by the curiously recurring template pattern.
 
 note: be careful to only include this header once, to avoid linker errors!
 note: this probably won't work with virtuals -- and definitely won't work with multiple inheritance!
@@ -57,7 +57,7 @@ THE SOFTWARE.
 						(t_class *)CLASS::m_class,						\
 						(method)CLASS::MaxMethod<&CLASS::METHOD>::call, \
 						#METHOD,										\
-						0); 
+						0);
 
 // for A_CANT methods (dblclick):
 #define REGISTER_METHOD_CANT(CLASS, METHOD) class_addmethod(	\
@@ -65,7 +65,7 @@ THE SOFTWARE.
 						(method)CLASS::MaxMethodCant<&CLASS::METHOD>::call, \
 						#METHOD,		\
 						A_CANT,			\
-						0); 
+						0);
 
 // for A_CANT methods (edclose):
 #define REGISTER_METHOD_EDCLOSE(CLASS, METHOD)	class_addmethod(	\
@@ -73,7 +73,7 @@ THE SOFTWARE.
 						(method)CLASS::MaxMethodEdClose<&CLASS::METHOD>::call,	\
 						#METHOD,		\
 						A_CANT,			\
-						0); 
+						0);
 
 // for A_CANT methods (assist):
 #define REGISTER_METHOD_ASSIST(CLASS, METHOD) class_addmethod(	\
@@ -81,7 +81,7 @@ THE SOFTWARE.
 						(method)CLASS::MaxMethodAssist<&CLASS::METHOD>::call, \
 						#METHOD,		\
 						A_CANT,			\
-						0); 
+						0);
 
 // for A_CANT methods (assist):
 #define REGISTER_METHOD_LOADBANG(CLASS, METHOD) class_addmethod(    \
@@ -97,7 +97,7 @@ THE SOFTWARE.
 						(method)CLASS::MaxMethodJsave<&CLASS::METHOD>::call,	\
 						#METHOD,		\
 						A_CANT,			\
-						0); 
+						0);
 
 // for A_GIMME methods (t_symbol * s, long argc, void * argv):
 #define REGISTER_METHOD_GIMME(CLASS, METHOD)	class_addmethod(	\
@@ -121,7 +121,7 @@ THE SOFTWARE.
 						(method)CLASS::MaxMethodDefSym<&CLASS::METHOD>::call, \
 						#METHOD,												\
 						A_DEFSYM,												\
-						0); 
+						0);
 
 // for A_FLOAT methods (double v):
 #define REGISTER_METHOD_FLOAT(CLASS, METHOD)	class_addmethod(	\
@@ -166,7 +166,7 @@ THE SOFTWARE.
 						(method)CLASS::MaxMethodMouse<&CLASS::METHOD>::call,	\
 						#METHOD,												\
 						A_CANT,													\
-						0); 
+						0);
 
 // used for clocks, qelem, and other no parameter delegate methods
 #define TO_METHOD_NONE(CLASS, METHOD) ((method)CLASS::MaxMethodNone<&CLASS::METHOD>::call)
@@ -177,7 +177,7 @@ THE SOFTWARE.
 // used for attr accessors
 #define TO_METHOD_GET(CLASS, METHOD) ((method)CLASS::MaxMethodAccessorGet<&CLASS::METHOD>::call)
 #define TO_METHOD_SET(CLASS, METHOD) ((method)MaxCppBase<CLASS>::MaxMethodAccessorSet<&CLASS::METHOD>::call)
-	
+
 // for DSP perform function
 #define REGISTER_PERFORM(CLASS, METHOD) object_method( \
 						dsp64, \
@@ -198,36 +198,36 @@ THE SOFTWARE.
 // a purely static base class for Max and MSP objects:
 template <typename T>
 class MaxCppBase {
-public:	
-	
+public:
+
 	static t_class * m_class;
-	
+
 	// template functors to forward Max messages to class methods:
 	typedef void (T::*maxmethodgimme)(const long inlet, const t_symbol * const s, const long ac, const t_atom * const av);
 	template<maxmethodgimme F>
 	struct MaxMethodGimme {
 		static void call(T * x, const t_symbol * const s, const long ac, const t_atom * const av) { ((x)->*F)(proxy_getinlet((t_object *)x), s, ac, av); }
 	};
-	
+
 	typedef t_max_err (T::*maxmethodgimmeback)(const t_symbol * const s, const long ac, const t_atom * const av, t_atom * const rv);
 	template<maxmethodgimmeback F>
 	struct MaxMethodGimmeback {
 		static t_max_err call(T * x, const t_symbol * const s, const long ac, const t_atom * const av, t_atom * const rv) { return ((x)->*F)(s, ac, av, rv); }
 	};
-	
+
 	typedef void (T::*maxmethod)(const long inlet);
 	template<maxmethod F>
 	struct MaxMethod {
 		static void call(T * x) { ((x)->*F)(proxy_getinlet((t_object *)x)); }
 	};
-	
+
 	//A_CANT for dblclick
 	typedef void (T::*maxmethodcant)(const long inlet);
 	template<maxmethodcant F>
 	struct MaxMethodCant {
 		static void call(T * x) { ((x)->*F)(proxy_getinlet((t_object *)x)); }
 	};
-		
+
 	//A_CANT for drag
 	typedef long (T::*maxmethoddrag)(t_object *drag, t_object *view);
 	template<maxmethoddrag F>
@@ -241,55 +241,55 @@ public:
 	struct MaxMethodEdClose {
 		static void call(T * x, char** const text, const long size) { ((x)->*F)(proxy_getinlet((t_object *)x), text, size); }
 	};
-		
+
 	//A_CANT for assist
 	typedef void (T::*maxmethodassist)(void *b, const long io, const long index, char * const dst);
 	template<maxmethodassist F>
 	struct MaxMethodAssist {
 		static void call(T * x, void *b, const long io, const long index, char * const dst) { ((x)->*F)(b, io, index, dst); }
 	};
-		
+
     //A_CANT for loadbang
     typedef void (T::*maxmethodloadbang)(void *b);
     template<maxmethodloadbang F>
     struct MaxMethodLoadBang {
         static void call(T * x, void *b) { ((x)->*F)(b); }
     };
-    
+
 	//A_CANT for jsave
 	typedef void (T::*maxmethodjsave)(t_dictionary *d);
 	template<maxmethodjsave F>
 	struct MaxMethodJsave {
 		static void call(T * x, t_dictionary *d) { ((x)->*F)(d); }
 	};
-		
-	//proxy_getinlet((t_object *)x), 
+
+	//proxy_getinlet((t_object *)x),
 	typedef void (T::*maxmethodlong)(const long inlet, const long v);
 	template<maxmethodlong F>
 	struct MaxMethodLong {
 		static void call(T * x, const long v) { ((x)->*F)(proxy_getinlet((t_object *)x), v); }
 	};
-		
+
 	//Template que j'ai rajoute for pouvoir faire A_DEFSYM(t_symbol *s)
 	typedef void (T::*maxmethoddefsym)(const long inlet, const t_symbol * const s);
 	template<maxmethoddefsym F>
 	struct MaxMethodDefSym {
 		static void call(T * x, const t_symbol * const s) { ((x)->*F)(proxy_getinlet((t_object *)x), s); }
-	};	
-	
+	};
+
 	typedef void (T::*maxmethodfloat)(const long inlet, const double v);
 	template<maxmethodfloat F>
 	struct MaxMethodFloat {
 		static void call(T * x, const double v) { ((x)->*F)(proxy_getinlet((t_object *)x), v); }
 	};
-	
+
 	//A_CANT for notify
 	typedef t_max_err (T::*maxmethodnotify)(const t_symbol * const s, const t_symbol *msg, void * const sender, void * const data);
 	template<maxmethodnotify F>
 	struct MaxMethodNotify{
 		static t_max_err call(T * x, const t_symbol * const s, const t_symbol *msg, void * const sender, void * const data) {return ((x)->*F)(s, msg, sender, data); }
 	};
-	
+
 	//JBOX methods
 	//A_CANT for paint
 	typedef void (T::*maxmethodpaint)(t_object *view);
@@ -297,14 +297,14 @@ public:
 	struct MaxMethodPaint {
 		static void call(T * x, t_object *view) { ((x)->*F)(view); }
 	};
-	
+
 	//A_CANT mouse
 	typedef void (T::*maxmethodmouse)(t_object *patcherview, t_pt pt, long modifiers);
 	template<maxmethodmouse F>
 	struct MaxMethodMouse {
 		static void call(T * x,t_object *patcherview, t_pt pt, long modifiers) { ((x)->*F)(patcherview,pt,modifiers); }
 	};
-	
+
 	///////////////////////////////////////////////////////////////////////////////////
 	typedef void (T::*maxmethodnone)();
 	template<maxmethodnone F>
@@ -343,21 +343,21 @@ public:
 	void **	m_outlets;
 	void **	m_inletproxies;
 	long m_whichinlet;
-	
+
 	static t_class * makeMaxClass(const char * const classname) {
-		common_symbols_init();
+		if (!_common_symbols) common_symbols_init();
 		t_class * const c = class_new(classname, (method)MaxCpp6<T>::maxcpp_create, (method)MaxCpp6<T>::maxcpp_destroy, sizeof(T), 0, A_GIMME, 0);
 		class_register(CLASS_BOX, c);
 		MaxCppBase<T>::m_class = c;
 		return c;
 	}
-	
+
 	static void * maxcpp_create(const t_symbol * const sym, const long ac, const t_atom * const av) {
 		void * const x = object_alloc(MaxCppBase<T>::m_class);
 		new(x) T(sym, ac, av);
-		return (T *)x; 
+		return (T *)x;
 	}
-	
+
 	static void maxcpp_destroy(t_object * const x) {
 		T * const t = (T *)x;
 		t->~T();
@@ -370,7 +370,7 @@ public:
 		sysmem_freeptr(t->m_inletproxies);
 		sysmem_freeptr(t->m_outlets);
 	}
-	
+
 	void setupIO(const unsigned int numinlets = 1, const unsigned int numoutlets = 1) {
 		if (numinlets > 0) {
 			const unsigned int numproxies = numinlets - 1;
@@ -382,7 +382,7 @@ public:
 		for (unsigned int i=0; i<numoutlets; ++i)
 			m_outlets[numoutlets - i - 1] = outlet_new(this, NULL); // generic outlet
 	}
-	
+
 	// C++ operator overload to treat MaxCpp6 objects as t_objects
 	operator t_object & () { return m_ob; }
 };
@@ -395,11 +395,11 @@ public:
 	void **	m_outlets;
 	void **	m_inletproxies;
 	long m_whichinlet;
-	
+
 	typedef void (T::*maxmethod_perform64)(double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes);
 	template<maxmethod_perform64 F>
 	struct MaxMethodPerform64 {
-		static void call(T * const x, t_object * const dsp64, double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes, const long flags, void * const userparam) { 
+		static void call(T * const x, t_object * const dsp64, double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes, const long flags, void * const userparam) {
 			((x)->*F)(ins, numins, outs, numouts, sampleframes);
 		}
 	};
@@ -412,23 +412,23 @@ public:
 	};
 
 	static t_class * makeMaxClass(const char * const classname) {
-		common_symbols_init();
+		if (!_common_symbols) common_symbols_init();
 		t_class * const c = class_new(classname, (method)MspCpp6<T>::maxcpp_create, (method)MspCpp6<T>::maxcpp_destroy, sizeof(T), NULL, A_GIMME, 0);
 		class_dspinit(c);
-		
+
 		class_addmethod(c, (method)MspCpp6<T>::maxcpp_dsp64, "dsp64", A_CANT, 0);
-		
+
 		class_register(CLASS_BOX, c);
 		MaxCppBase<T>::m_class = c;
 		return c;
 	}
-	
+
 	static void * maxcpp_create(const t_symbol * const sym, const long ac, const t_atom * const av) {
 		void * const x = object_alloc(MaxCppBase<T>::m_class);
 		new(x) T(sym, ac, av);
-		return (T *)x; 
+		return (T *)x;
 	}
-	
+
 	void setupIO(const unsigned int signal_inlets, const unsigned int signal_outlets, const unsigned int non_signal_inlets = 0, const unsigned int non_signal_outlets = 0) {
 		// prevent recycling of inputs for outputs
 		m_ob.z_misc = Z_NO_INPLACE;
@@ -462,7 +462,7 @@ public:
 			}
 		}
 	}
-	
+
 	static void maxcpp_destroy(t_pxobject * const x) {
 		dsp_free(x);
 		T * const t = (T *)x;
@@ -476,17 +476,17 @@ public:
 		sysmem_freeptr(t->m_inletproxies);
 		sysmem_freeptr(t->m_outlets);
 	}
-	
+
 	static void maxcpp_dsp64(t_pxobject * const x, t_object * const dsp64, const short * const count, const double samplerate, const long maxvectorsize, const long flags) {
 		((T *)x)->dsp(dsp64, count, samplerate, maxvectorsize, flags);
 	}
-	
+
 	// stub functions in case the user doesn't supply them:
 	void dsp(t_object * const dsp64, const short * const count, const double samplerate, const long maxvectorsize, const long flags) {
 		REGISTER_PERFORM(T, perform);
 	}
 	void perform(double * const * const ins, const long numins, double * const * const outs, const long numouts, const long sampleframes) {}
-	
+
 	// C++ operator overload to treat MaxMsp6 objects as t_objects
 	operator t_object & () { return m_ob.z_ob; }
 	operator t_pxobject & () { return m_ob; }
@@ -503,11 +503,11 @@ public:
 	long m_whichinlet;
 	long m_inlet_count;
 	long m_outlet_count;
-	
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	static t_class* makeMaxClass(const char *classname,long jboxflags = 0,const char *defaultrect = "0 0 100 100"){
-		common_symbols_init();
+		if (!_common_symbols) common_symbols_init();
 		t_class *c = class_new(classname,(method)JboxCpp6<T>::maxcpp_create,(method)JboxCpp6<T>::maxcpp_destroy,sizeof(T),0,A_GIMME,0);
 		c->c_flags |= CLASS_FLAG_NEWDICTIONARY;
 
@@ -524,10 +524,10 @@ public:
 
 		return c;
 	}
-	
+
 	static void* maxcpp_create(t_symbol * sym, long ac, t_atom * av){
 		void *x = object_alloc(MaxCppBase<T>::m_class);
-		((T *)x)->m_flags = 0 ;		
+		((T *)x)->m_flags = 0 ;
 		new(x) T();
 
 		t_dictionary *d = object_dictionaryarg(ac,av) ;
@@ -540,9 +540,9 @@ public:
 		attr_dictionary_process((T *)x, d);
 		jbox_ready(&((T *)x)->m_ob);
 
-		return (T *)x; 
+		return (T *)x;
 	}
-	
+
 	static void maxcpp_destroy(t_jbox * x){
 		jbox_free(&t->m_ob);
 		T * const t = (T *)x;
@@ -562,12 +562,12 @@ public:
 	void setupJbox(long jboxflags){
 		m_flags |= jboxflags ;
 	}
-	
+
 	void setupIO(unsigned int numinlets = 1, unsigned int numoutlets = 1) {
 		m_inlet_count = numinlets;
 		m_outlet_count = numoutlets;
 	}
-	
+
 	void setupIOclass(){
 		if (m_inlet_count > 0) {
 			unsigned int numproxies = m_inlet_count - 1;
@@ -577,7 +577,7 @@ public:
 		}
 		m_outlets = (void **)sysmem_newptr(sizeof(void *) * m_outlet_count);
 		for (unsigned int i=0; i<m_outlet_count; ++i)
-			m_outlets[m_outlet_count - i - 1] = outlet_new(this, NULL); // generic outlet	
+			m_outlets[m_outlet_count - i - 1] = outlet_new(this, NULL); // generic outlet
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -589,7 +589,7 @@ public:
 		((T *)x)->paint(g, view, rect);
 	}
 
-	void paint(t_jgraphics *g, t_object *view , t_rect rect){}	
+	void paint(t_jgraphics *g, t_object *view , t_rect rect){}
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
